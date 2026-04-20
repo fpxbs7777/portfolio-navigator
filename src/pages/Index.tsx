@@ -4,6 +4,7 @@ import { IOLTest } from "@/components/IOLTest";
 import { ProfileSelector, PortfolioDetail } from "@/components/PortfolioView";
 import { Glossary } from "@/components/Glossary";
 import { Checklist } from "@/components/Checklist";
+import { PortfolioEngine } from "@/components/PortfolioEngine";
 import type { ProfileKey } from "@/data/iolData";
 import {
   Compass,
@@ -13,10 +14,11 @@ import {
   ArrowRight,
   Sparkles,
   Quote,
+  Activity,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
-type Section = "test" | "portfolios" | "checklist" | "glossary";
+type Section = "test" | "portfolios" | "engine" | "checklist" | "glossary";
 
 const Index = () => {
   const [section, setSection] = useState<Section>("test");
