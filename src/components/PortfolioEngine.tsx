@@ -154,6 +154,30 @@ export const PortfolioEngine = ({ selectedProfile, onProfileChange }: PortfolioE
   const [epsResults, setEpsResults] = useState<EpsRow[]>([]);
   const [epsLoading, setEpsLoading] = useState(false);
 
+  // Auto-Portfolio
+  const [autoMonto, setAutoMonto] = useState<string>("");
+  const [autoMoneda, setAutoMoneda] = useState<"ars" | "usd">("ars");
+  const [autoLoading, setAutoLoading] = useState(false);
+  const [autoStep, setAutoStep] = useState<{ idx: number; label: string }[]>([]);
+  const [autoResult, setAutoResult] = useState<{
+    regimen: string;
+    flags: string[];
+    sectores: string[];
+    justificacion: string;
+    universoRV: string[];
+    pesoMaxRV: number;
+    enriched: Enriched[];
+    weights: { ticker: string; weight: number; monto: number }[];
+    sharpe: number;
+    portReturn: number;
+    portVol: number;
+    bonos: string[];
+    montoRV: number;
+    montoRF: number;
+    montoCau: number;
+    montoEf: number;
+  } | null>(null);
+
   const allocation = engineAllocations[selectedProfile];
   const setMsg = (msg: string, color: StatusColor = "neutral") => setStatus({ msg, color });
 
