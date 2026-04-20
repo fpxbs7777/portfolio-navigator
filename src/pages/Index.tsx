@@ -40,6 +40,11 @@ const Index = () => {
     { key: "glossary", label: "Glosario", icon: BookOpen },
   ];
 
+  const goToEngine = () => {
+    setSection("engine");
+    setTimeout(() => portfolioRef.current?.scrollIntoView({ behavior: "smooth", block: "start" }), 100);
+  };
+
   return (
     <div className="min-h-screen bg-background paper-texture">
       {/* Header sticky */}
@@ -177,7 +182,21 @@ const Index = () => {
             <div className="mb-8">
               <ProfileSelector selected={selectedProfile} onSelect={setSelectedProfile} />
             </div>
-            <PortfolioDetail profileKey={selectedProfile} />
+            <PortfolioDetail profileKey={selectedProfile} onAnalyzeLive={goToEngine} />
+          </div>
+        )}
+
+        {section === "engine" && (
+          <div>
+            <SectionHeader
+              eyebrow="En vivo"
+              title="Motor de portfolio en vivo"
+              description="Conectá tu cuenta IOL (opcional) o usá el modo demo. Analiza el panel elegido y rankea cada activo con un score de salud financiera (P/E, ROE, D/E, márgenes, dividendo). Genera el portfolio sugerido para el perfil activo."
+            />
+            <PortfolioEngine
+              selectedProfile={selectedProfile}
+              onProfileChange={setSelectedProfile}
+            />
           </div>
         )}
 
