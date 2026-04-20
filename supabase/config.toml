@@ -17,3 +17,6 @@ verify_jwt = false
 
 [functions.yf-earnings]
 verify_jwt = false
+
+[functions.auto-portfolio]
+verify_jwt = false
