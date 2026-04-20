@@ -1,7 +1,11 @@
 // Edge function: consulta Yahoo Finance (quoteSummary) para obtener fundamentales.
 // Se llama del lado del servidor para evitar CORS y rate-limit del browser.
 
-import { corsHeaders } from "https://esm.sh/@supabase/supabase-js@2.45.0/cors";
+const corsHeaders = {
+  "Access-Control-Allow-Origin": "*",
+  "Access-Control-Allow-Headers":
+    "authorization, x-client-info, apikey, content-type, x-supabase-client-platform, x-supabase-client-platform-version, x-supabase-client-runtime, x-supabase-client-runtime-version",
+};
 
 const YF_BASE = "https://query1.finance.yahoo.com/v10/finance/quoteSummary/";
 
