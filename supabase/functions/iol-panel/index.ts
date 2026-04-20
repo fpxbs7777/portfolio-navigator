@@ -7,12 +7,15 @@ const corsHeaders = {
     "authorization, x-client-info, apikey, content-type, x-supabase-client-platform, x-supabase-client-platform-version, x-supabase-client-runtime, x-supabase-client-runtime-version",
 };
 
-const PANEL_PATHS: Record<string, string> = {
-  cedears: "cedears",
-  acciones: "acciones",
-  titulosPublicos: "titulosPublicos",
-  obligacionesNegociables: "obligacionesNegociables",
-  cauciones: "cauciones",
+// Mapeo: clave del UI -> { instrumento IOL, país por defecto }
+const PANEL_PATHS: Record<string, { inst: string; pais: string }> = {
+  cedears:                 { inst: "cedears",                 pais: "argentina" },
+  acciones:                { inst: "acciones",                pais: "argentina" },
+  titulosPublicos:         { inst: "titulosPublicos",         pais: "argentina" },
+  obligacionesNegociables: { inst: "obligacionesNegociables", pais: "argentina" },
+  cauciones:               { inst: "cauciones",               pais: "argentina" },
+  adrs:                    { inst: "adrs",                    pais: "estados_unidos" },
+  acciones_eeuu:           { inst: "acciones",                pais: "estados_unidos" },
 };
 
 Deno.serve(async (req) => {
