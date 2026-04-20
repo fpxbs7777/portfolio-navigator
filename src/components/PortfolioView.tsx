@@ -1,7 +1,8 @@
 import { profiles, profileOrder, type ProfileKey } from "@/data/iolData";
 import { Card } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
-import { TrendingUp, TrendingDown, Target } from "lucide-react";
+import { TrendingUp, TrendingDown, Target, Activity } from "lucide-react";
 
 interface ProfileSelectorProps {
   selected: ProfileKey;
@@ -52,9 +53,10 @@ export const ProfileSelector = ({ selected, onSelect }: ProfileSelectorProps) =>
 
 interface PortfolioDetailProps {
   profileKey: ProfileKey;
+  onAnalyzeLive?: () => void;
 }
 
-export const PortfolioDetail = ({ profileKey }: PortfolioDetailProps) => {
+export const PortfolioDetail = ({ profileKey, onAnalyzeLive }: PortfolioDetailProps) => {
   const p = profiles[profileKey];
 
   return (
