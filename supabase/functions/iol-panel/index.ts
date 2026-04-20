@@ -24,7 +24,7 @@ Deno.serve(async (req) => {
   }
 
   try {
-    const { token, panel = "cedears", pais = "argentina" } = await req.json();
+    const { token, panel = "cedears", pais } = await req.json();
 
     if (!token) {
       return new Response(
@@ -33,15 +33,16 @@ Deno.serve(async (req) => {
       );
     }
 
-    const instrumento = PANEL_PATHS[panel];
-    if (!instrumento) {
+    const cfg = PANEL_PATHS[panel];
+    if (!cfg) {
       return new Response(
         JSON.stringify({ error: `Panel inválido: ${panel}` }),
         { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
     }
 
-    const url = `https://api.invertironline.com/api/v2/Cotizaciones/${instrumento}/${pais}/Todos`;
+    const finalPais = pais || cfg.pais;
+    const url = `https://api.invertironline.com/api/v2/Cotizaciones/${cfg.inst}/${finalPais}/Todos`;
 
     const resp = await fetch(url, {
       headers: {
