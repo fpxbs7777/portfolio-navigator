@@ -161,6 +161,33 @@ export const PortfolioDetail = ({ profileKey, onAnalyzeLive }: PortfolioDetailPr
           </ul>
         </Card>
       </div>
+
+      {onAnalyzeLive && (
+        <Card className="p-6 md:p-8 bg-gradient-hero text-primary-foreground border-0 shadow-warm">
+          <div className="flex flex-col md:flex-row md:items-center gap-4">
+            <div className="flex-1">
+              <div className="flex items-center gap-2 text-xs uppercase tracking-widest text-accent font-medium mb-2">
+                <Activity className="w-3.5 h-3.5" />
+                Siguiente paso
+              </div>
+              <h4 className="font-serif text-2xl text-primary-foreground mb-1">
+                Analizá el mercado en vivo para este perfil
+              </h4>
+              <p className="text-sm text-primary-foreground/70 leading-relaxed">
+                Conectá tu cuenta IOL y obtené el ranking de activos del panel con score de salud
+                financiera (P/E, ROE, D/E, márgenes) actualizado al momento.
+              </p>
+            </div>
+            <Button
+              onClick={onAnalyzeLive}
+              size="lg"
+              className="bg-accent hover:bg-accent/90 text-accent-foreground rounded-full h-12 px-6 shadow-gold whitespace-nowrap"
+            >
+              Abrir motor en vivo →
+            </Button>
+          </div>
+        </Card>
+      )}
     </div>
   );
 };
