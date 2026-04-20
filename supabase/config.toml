@@ -8,3 +8,12 @@ verify_jwt = false
 
 [functions.yfinance-info]
 verify_jwt = false
+
+[functions.macro-ar]
+verify_jwt = false
+
+[functions.yf-history]
+verify_jwt = false
+
+[functions.yf-earnings]
+verify_jwt = false
