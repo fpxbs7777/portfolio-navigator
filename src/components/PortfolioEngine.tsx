@@ -575,6 +575,203 @@ export const PortfolioEngine = ({ selectedProfile, onProfileChange }: PortfolioE
         <span className="text-sm text-muted-foreground">{status.msg}</span>
       </div>
 
+      {/* TAB: AUTO-PORTFOLIO */}
+      {tab === "auto" && (
+        <Card className="p-6 md:p-8 bg-card border-border/60 shadow-card">
+          <div className="flex items-center gap-2 text-xs uppercase tracking-widest text-accent font-medium mb-4">
+            <Wand2 className="w-3.5 h-3.5" /> Generador automático de portafolio
+          </div>
+          <p className="text-sm text-muted-foreground mb-5 leading-relaxed">
+            Un solo clic ejecuta el flujo completo: análisis intermarket macro → detección de sectores favorecidos →
+            mapeo de tickers candidatos según tu perfil → análisis fundamental con yFinance →
+            optimización Markowitz Max-Sharpe → composición final lista para operar.
+          </p>
+
+          <div className="grid md:grid-cols-3 gap-3 mb-4">
+            <div>
+              <label className="text-[10px] uppercase tracking-widest text-muted-foreground mb-1 block">Perfil</label>
+              <select
+                value={selectedProfile}
+                onChange={(e) => onProfileChange(e.target.value as ProfileKey)}
+                className="w-full h-11 rounded-lg bg-background border border-border px-3 text-sm"
+              >
+                {(Object.keys(profiles) as ProfileKey[]).map((k) => (
+                  <option key={k} value={k}>{profiles[k].name}</option>
+                ))}
+              </select>
+            </div>
+            <Input
+              type="number" placeholder="Monto a invertir"
+              value={autoMonto} onChange={(e) => setAutoMonto(e.target.value)}
+              className="h-11 rounded-lg"
+            />
+            <select
+              value={autoMoneda}
+              onChange={(e) => setAutoMoneda(e.target.value as "ars" | "usd")}
+              className="h-11 rounded-lg bg-background border border-border px-3 text-sm"
+            >
+              <option value="ars">ARS</option>
+              <option value="usd">USD</option>
+            </select>
+          </div>
+
+          <Button
+            onClick={generarAutoPortfolio}
+            disabled={autoLoading || !autoMonto}
+            className="w-full h-12 rounded-lg bg-primary hover:bg-primary/90 text-base"
+          >
+            {autoLoading ? (
+              <><Loader2 className="w-4 h-4 mr-2 animate-spin" /> Generando portfolio…</>
+            ) : (
+              <><Wand2 className="w-4 h-4 mr-2" /> Generar portfolio automático</>
+            )}
+          </Button>
+
+          {/* Pasos en vivo */}
+          {autoStep.length > 0 && (
+            <Card className="p-4 mt-5 bg-secondary/40 border-border/60">
+              <div className="text-[10px] uppercase tracking-widest text-muted-foreground mb-3">Proceso</div>
+              <div className="space-y-2">
+                {autoStep.map((s, i) => {
+                  const isLast = i === autoStep.length - 1;
+                  const isDone = !isLast || !autoLoading;
+                  return (
+                    <div key={i} className="flex items-center gap-2 text-sm">
+                      {isDone ? (
+                        <CheckCircle2 className="w-4 h-4 text-success shrink-0" />
+                      ) : (
+                        <Loader2 className="w-4 h-4 text-accent animate-spin shrink-0" />
+                      )}
+                      <span className={cn(isDone ? "text-foreground" : "text-muted-foreground")}>
+                        {s.label}
+                      </span>
+                    </div>
+                  );
+                })}
+              </div>
+            </Card>
+          )}
+
+          {/* Resultado */}
+          {autoResult && (
+            <div className="mt-5 space-y-4">
+              {/* Régimen + justificación */}
+              <Card className="p-5 bg-gradient-paper border-accent/30">
+                <div className="text-[10px] uppercase tracking-widest text-accent font-medium mb-2">Régimen intermarket</div>
+                <h4 className="font-serif text-lg text-foreground mb-2">{autoResult.regimen}</h4>
+                <p className="text-sm text-muted-foreground leading-relaxed mb-3">{autoResult.justificacion}</p>
+                <div className="flex flex-wrap gap-1.5">
+                  {autoResult.sectores.map((s) => (
+                    <span key={s} className="px-2 py-0.5 rounded-full bg-accent-soft text-accent-foreground text-[11px]">
+                      {s}
+                    </span>
+                  ))}
+                </div>
+              </Card>
+
+              {/* Composición final */}
+              <Card className="p-5 border-border/60">
+                <h4 className="font-serif text-base text-foreground mb-1">Composición final sugerida</h4>
+                <p className="text-xs text-muted-foreground mb-4">
+                  Perfil {profiles[selectedProfile].name} · {autoMoneda.toUpperCase()} {Math.round(parseFloat(autoMonto)).toLocaleString("es-AR")}
+                </p>
+
+                {/* Bloques por clase */}
+                <div className="space-y-3">
+                  {autoResult.weights.length > 0 && (
+                    <div>
+                      <div className="flex justify-between text-xs text-muted-foreground mb-2">
+                        <span className="uppercase tracking-wider">Renta Variable (Markowitz Max-Sharpe)</span>
+                        <span className="tabular-nums">{autoMoneda.toUpperCase()} {Math.round(autoResult.montoRV).toLocaleString("es-AR")}</span>
+                      </div>
+                      {autoResult.weights.map((w) => (
+                        <div key={w.ticker} className="flex items-center gap-3 py-1.5 border-b border-border/40">
+                          <TickerBadge symbol={w.ticker} />
+                          <Progress value={w.weight * 100} className="flex-1 h-1.5" />
+                          <span className="font-medium tabular-nums text-sm w-20 text-right">
+                            {(w.weight * 100).toFixed(1)}%
+                          </span>
+                          <span className="font-mono tabular-nums text-xs text-muted-foreground w-24 text-right">
+                            {Math.round(w.monto).toLocaleString("es-AR")}
+                          </span>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+
+                  {autoResult.bonos.length > 0 && autoResult.montoRF > 0 && (
+                    <div>
+                      <div className="flex justify-between text-xs text-muted-foreground mb-2 mt-3">
+                        <span className="uppercase tracking-wider">Renta Fija sugerida</span>
+                        <span className="tabular-nums">{autoMoneda.toUpperCase()} {Math.round(autoResult.montoRF).toLocaleString("es-AR")}</span>
+                      </div>
+                      <div className="flex flex-wrap gap-2">
+                        {autoResult.bonos.map((b) => (
+                          <span key={b} className="px-2.5 py-1 rounded-md bg-secondary text-foreground text-xs font-mono border border-border">
+                            {b}
+                          </span>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+
+                  {autoResult.montoCau > 0 && (
+                    <div className="flex justify-between text-sm py-2 border-t border-border/40 mt-3">
+                      <span className="text-muted-foreground">Cauciones</span>
+                      <span className="tabular-nums font-medium">{autoMoneda.toUpperCase()} {Math.round(autoResult.montoCau).toLocaleString("es-AR")}</span>
+                    </div>
+                  )}
+                  {autoResult.montoEf > 0 && (
+                    <div className="flex justify-between text-sm py-2 border-t border-border/40">
+                      <span className="text-muted-foreground">Efectivo / liquidez</span>
+                      <span className="tabular-nums font-medium">{autoMoneda.toUpperCase()} {Math.round(autoResult.montoEf).toLocaleString("es-AR")}</span>
+                    </div>
+                  )}
+                </div>
+
+                {/* Métricas portfolio */}
+                {autoResult.sharpe > 0 && (
+                  <div className="grid grid-cols-3 gap-2 mt-5 pt-4 border-t border-border/40">
+                    <div className="text-center bg-secondary/40 rounded-lg p-2">
+                      <div className="font-serif text-lg tabular-nums text-foreground">{(autoResult.portReturn * 100).toFixed(1)}%</div>
+                      <div className="text-[9px] uppercase tracking-wider text-muted-foreground">Retorno anual est.</div>
+                    </div>
+                    <div className="text-center bg-secondary/40 rounded-lg p-2">
+                      <div className="font-serif text-lg tabular-nums text-foreground">{(autoResult.portVol * 100).toFixed(1)}%</div>
+                      <div className="text-[9px] uppercase tracking-wider text-muted-foreground">Volatilidad</div>
+                    </div>
+                    <div className="text-center bg-primary-soft rounded-lg p-2">
+                      <div className="font-serif text-lg tabular-nums text-primary">{autoResult.sharpe.toFixed(2)}</div>
+                      <div className="text-[9px] uppercase tracking-wider text-muted-foreground">Sharpe ratio</div>
+                    </div>
+                  </div>
+                )}
+              </Card>
+
+              {/* Detalle activos analizados */}
+              {autoResult.enriched.length > 0 && (
+                <Card className="p-5 border-border/60">
+                  <div className="text-[10px] uppercase tracking-widest text-muted-foreground mb-3">
+                    Activos analizados ({autoResult.enriched.length}) — ordenados por score ETR
+                  </div>
+                  <div className="space-y-1.5">
+                    {autoResult.enriched.map((e) => (
+                      <div key={e.simbolo} className="flex items-center justify-between py-1.5 border-b border-border/40">
+                        <div className="flex items-center gap-2">
+                          <TickerBadge symbol={e.simbolo} />
+                          <span className="text-xs text-muted-foreground">{e.info?.sector || "—"}</span>
+                        </div>
+                        <ScorePill score={e.score} />
+                      </div>
+                    ))}
+                  </div>
+                </Card>
+              )}
+            </div>
+          )}
+        </Card>
+      )}
+
       {/* TAB: AUTH IOL */}
       {tab === "auth" && (
         <Card className="p-6 md:p-8 bg-card border-border/60 shadow-card">
