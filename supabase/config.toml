@@ -1,0 +1,10 @@
+project_id = "culsencadxqxfphownik"
+
+[functions.iol-auth]
+verify_jwt = false
+
+[functions.iol-panel]
+verify_jwt = false
+
+[functions.yfinance-info]
+verify_jwt = false
