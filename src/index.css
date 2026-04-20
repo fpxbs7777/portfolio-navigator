@@ -1,96 +1,75 @@
+@import url('https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600;9..144,700&family=Inter:wght@300;400;500;600;700&display=swap');
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
 
-/* Definition of the design system. All colors, gradients, fonts, etc should be defined here. 
-All colors MUST be HSL.
+/* Design system — Guía Asesor Financiero
+   Estilo: editorial cálido, tonos tierra, dorado suave, elegante.
+   Todos los colores en HSL.
 */
 
 @layer base {
   :root {
-    --background: 0 0% 100%;
-    --foreground: 222.2 84% 4.9%;
+    /* Base — papel cálido */
+    --background: 36 33% 96%;
+    --foreground: 25 25% 15%;
 
-    --card: 0 0% 100%;
-    --card-foreground: 222.2 84% 4.9%;
+    --card: 38 40% 98%;
+    --card-foreground: 25 25% 15%;
 
-    --popover: 0 0% 100%;
-    --popover-foreground: 222.2 84% 4.9%;
+    --popover: 38 40% 98%;
+    --popover-foreground: 25 25% 15%;
 
-    --primary: 222.2 47.4% 11.2%;
-    --primary-foreground: 210 40% 98%;
+    /* Primary — terracota / cobre profundo */
+    --primary: 18 45% 32%;
+    --primary-foreground: 38 40% 97%;
+    --primary-soft: 18 50% 92%;
 
-    --secondary: 210 40% 96.1%;
-    --secondary-foreground: 222.2 47.4% 11.2%;
+    /* Secondary — arena */
+    --secondary: 32 30% 88%;
+    --secondary-foreground: 25 30% 22%;
 
-    --muted: 210 40% 96.1%;
-    --muted-foreground: 215.4 16.3% 46.9%;
+    /* Muted — beige suave */
+    --muted: 35 25% 90%;
+    --muted-foreground: 25 15% 40%;
 
-    --accent: 210 40% 96.1%;
-    --accent-foreground: 222.2 47.4% 11.2%;
+    /* Accent — dorado mostaza */
+    --accent: 38 55% 55%;
+    --accent-foreground: 25 35% 15%;
+    --accent-soft: 42 60% 90%;
 
-    --destructive: 0 84.2% 60.2%;
-    --destructive-foreground: 210 40% 98%;
+    /* Verde oliva — para "ganancia" / positivo */
+    --success: 95 30% 38%;
+    --success-foreground: 38 40% 97%;
+    --success-soft: 95 30% 90%;
 
-    --border: 214.3 31.8% 91.4%;
-    --input: 214.3 31.8% 91.4%;
-    --ring: 222.2 84% 4.9%;
+    /* Rojo terracota oscuro — pérdida / drawdown */
+    --destructive: 8 60% 42%;
+    --destructive-foreground: 38 40% 97%;
+    --destructive-soft: 8 50% 93%;
 
-    --radius: 0.5rem;
+    --border: 30 20% 84%;
+    --input: 30 20% 88%;
+    --ring: 18 45% 32%;
 
-    --sidebar-background: 0 0% 98%;
+    --radius: 0.875rem;
 
-    --sidebar-foreground: 240 5.3% 26.1%;
+    /* Gradientes */
+    --gradient-warm: linear-gradient(135deg, hsl(36 45% 94%) 0%, hsl(32 38% 88%) 50%, hsl(28 35% 84%) 100%);
+    --gradient-hero: linear-gradient(135deg, hsl(18 45% 32%) 0%, hsl(12 40% 28%) 100%);
+    --gradient-gold: linear-gradient(135deg, hsl(38 55% 55%) 0%, hsl(30 50% 48%) 100%);
+    --gradient-paper: linear-gradient(180deg, hsl(36 33% 96%) 0%, hsl(34 30% 93%) 100%);
 
-    --sidebar-primary: 240 5.9% 10%;
+    /* Sombras editoriales */
+    --shadow-soft: 0 2px 12px -4px hsl(25 25% 15% / 0.08);
+    --shadow-warm: 0 12px 40px -12px hsl(18 45% 32% / 0.18);
+    --shadow-card: 0 1px 3px hsl(25 25% 15% / 0.06), 0 8px 24px -8px hsl(25 25% 15% / 0.08);
+    --shadow-gold: 0 8px 32px -8px hsl(38 55% 55% / 0.35);
 
-    --sidebar-primary-foreground: 0 0% 98%;
-
-    --sidebar-accent: 240 4.8% 95.9%;
-
-    --sidebar-accent-foreground: 240 5.9% 10%;
-
-    --sidebar-border: 220 13% 91%;
-
-    --sidebar-ring: 217.2 91.2% 59.8%;
-  }
-
-  .dark {
-    --background: 222.2 84% 4.9%;
-    --foreground: 210 40% 98%;
-
-    --card: 222.2 84% 4.9%;
-    --card-foreground: 210 40% 98%;
-
-    --popover: 222.2 84% 4.9%;
-    --popover-foreground: 210 40% 98%;
-
-    --primary: 210 40% 98%;
-    --primary-foreground: 222.2 47.4% 11.2%;
-
-    --secondary: 217.2 32.6% 17.5%;
-    --secondary-foreground: 210 40% 98%;
-
-    --muted: 217.2 32.6% 17.5%;
-    --muted-foreground: 215 20.2% 65.1%;
-
-    --accent: 217.2 32.6% 17.5%;
-    --accent-foreground: 210 40% 98%;
-
-    --destructive: 0 62.8% 30.6%;
-    --destructive-foreground: 210 40% 98%;
-
-    --border: 217.2 32.6% 17.5%;
-    --input: 217.2 32.6% 17.5%;
-    --ring: 212.7 26.8% 83.9%;
-    --sidebar-background: 240 5.9% 10%;
-    --sidebar-foreground: 240 4.8% 95.9%;
-    --sidebar-primary: 224.3 76.3% 48%;
-    --sidebar-primary-foreground: 0 0% 100%;
-    --sidebar-accent: 240 3.7% 15.9%;
-    --sidebar-accent-foreground: 240 4.8% 95.9%;
-    --sidebar-border: 240 3.7% 15.9%;
-    --sidebar-ring: 217.2 91.2% 59.8%;
+    /* Transiciones */
+    --transition-smooth: cubic-bezier(0.4, 0, 0.2, 1);
+    --transition-spring: cubic-bezier(0.34, 1.56, 0.64, 1);
   }
 }
 
@@ -99,7 +78,66 @@ All colors MUST be HSL.
     @apply border-border;
   }
 
+  html {
+    scroll-behavior: smooth;
+  }
+
   body {
     @apply bg-background text-foreground;
+    font-family: 'Inter', system-ui, sans-serif;
+    font-feature-settings: 'ss01', 'cv11';
+    -webkit-font-smoothing: antialiased;
+  }
+
+  h1, h2, h3, h4, .font-serif {
+    font-family: 'Fraunces', Georgia, serif;
+    font-feature-settings: 'ss01';
+    letter-spacing: -0.015em;
+  }
+
+  ::selection {
+    background: hsl(var(--accent) / 0.35);
+    color: hsl(var(--foreground));
+  }
+}
+
+@layer utilities {
+  .bg-gradient-warm { background: var(--gradient-warm); }
+  .bg-gradient-hero { background: var(--gradient-hero); }
+  .bg-gradient-gold { background: var(--gradient-gold); }
+  .bg-gradient-paper { background: var(--gradient-paper); }
+  .shadow-soft { box-shadow: var(--shadow-soft); }
+  .shadow-warm { box-shadow: var(--shadow-warm); }
+  .shadow-card { box-shadow: var(--shadow-card); }
+  .shadow-gold { box-shadow: var(--shadow-gold); }
+  .transition-smooth { transition: all 0.3s var(--transition-smooth); }
+  .transition-spring { transition: all 0.4s var(--transition-spring); }
+
+  .text-balance { text-wrap: balance; }
+  .text-pretty { text-wrap: pretty; }
+
+  /* Textura de papel sutil */
+  .paper-texture {
+    background-image:
+      radial-gradient(circle at 1px 1px, hsl(25 25% 15% / 0.025) 1px, transparent 0);
+    background-size: 24px 24px;
+  }
+
+  .animate-fade-up {
+    animation: fadeUp 0.6s var(--transition-smooth) both;
+  }
+
+  @keyframes fadeUp {
+    from { opacity: 0; transform: translateY(12px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+
+  .animate-scale-in {
+    animation: scaleIn 0.4s var(--transition-spring) both;
+  }
+
+  @keyframes scaleIn {
+    from { opacity: 0; transform: scale(0.96); }
+    to { opacity: 1; transform: scale(1); }
   }
 }
