@@ -38,6 +38,8 @@ import {
   PieChart,
   FileText,
   Download,
+  Wand2,
+  CheckCircle2,
 } from "lucide-react";
 
 interface PortfolioEngineProps {
@@ -47,7 +49,7 @@ interface PortfolioEngineProps {
 
 type Panel = "cedears" | "acciones" | "titulosPublicos" | "obligacionesNegociables" | "cauciones" | "adrs" | "acciones_eeuu";
 type StatusColor = "neutral" | "amber" | "green" | "red";
-type Tab = "auth" | "macro" | "perfil" | "panel" | "fund" | "capm" | "markowitz" | "eps" | "portfolio";
+type Tab = "auto" | "auth" | "macro" | "perfil" | "panel" | "fund" | "capm" | "markowitz" | "eps" | "portfolio";
 
 interface Enriched extends PanelTitulo {
   yfTicker: string;
@@ -85,6 +87,7 @@ interface EpsRow {
 }
 
 const TABS: { key: Tab; label: string; icon: typeof Lock }[] = [
+  { key: "auto",       label: "Auto-Portfolio",  icon: Wand2 },
   { key: "auth",       label: "Auth IOL",        icon: Lock },
   { key: "macro",      label: "Macro AR",        icon: TrendingUp },
   { key: "perfil",     label: "Perfil + Buckets",icon: Sparkles },
@@ -97,7 +100,7 @@ const TABS: { key: Tab; label: string; icon: typeof Lock }[] = [
 ];
 
 export const PortfolioEngine = ({ selectedProfile, onProfileChange }: PortfolioEngineProps) => {
-  const [tab, setTab] = useState<Tab>("auth");
+  const [tab, setTab] = useState<Tab>("auto");
 
   // Auth
   const [user, setUser] = useState("");
