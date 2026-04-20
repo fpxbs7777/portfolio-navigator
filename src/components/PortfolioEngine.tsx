@@ -367,6 +367,134 @@ export const PortfolioEngine = ({ selectedProfile, onProfileChange }: PortfolioE
     setMsg(`EPS Engine: ${out.length} activos auditados.`, "green");
   };
 
+  // ============================================================
+  // AUTO-PORTFOLIO: orquestador end-to-end
+  // ============================================================
+  const generarAutoPortfolio = async () => {
+    const montoNum = parseFloat(autoMonto);
+    if (!montoNum || montoNum <= 0) {
+      setMsg("Ingresá un monto válido para generar el portfolio.", "amber");
+      return;
+    }
+    setAutoLoading(true);
+    setAutoResult(null);
+    setAutoStep([]);
+    const pushStep = (label: string) =>
+      setAutoStep((prev) => [...prev, { idx: prev.length + 1, label }]);
+
+    try {
+      // PASO 1: Macro
+      pushStep("Cargando datos macro Argentina (dólares, inflación, riesgo país)…");
+      const macroResp = await supabase.functions.invoke("macro-ar", { body: {} });
+      const macroData = (macroResp.data as MacroData) || null;
+      if (macroData) setMacro(macroData);
+
+      // PASO 2: Análisis intermarket + IA
+      pushStep("Analizando régimen intermarket y detectando sectores favorecidos…");
+      const autoResp = await supabase.functions.invoke("auto-portfolio", {
+        body: { macro: macroData, profile: selectedProfile, monto: montoNum, moneda: autoMoneda },
+      });
+      if (autoResp.error || !autoResp.data) {
+        throw new Error(autoResp.error?.message || "Falló análisis intermarket");
+      }
+      const intermarket = autoResp.data as {
+        regimen: string; flags: string[]; sectores: string[]; tickersAR: string[];
+        tickersCEDEAR: string[]; bonos: string[]; universoRV: string[];
+        pesoMaxRV: number; usaBonos: boolean; justificacion: string;
+      };
+
+      // PASO 3: Enriquecer universo con yFinance
+      const universo = intermarket.universoRV;
+      pushStep(`Analizando ${universo.length} candidatos con yFinance…`);
+      const enrichedOut: Enriched[] = [];
+      for (const sym of universo) {
+        const yfT = mapYFTicker(sym);
+        const { data } = await supabase.functions.invoke("yfinance-info", { body: { ticker: yfT } });
+        const info: YFInfo | null = data?.info || null;
+        const { score, detalle } = calcScoreSalud(info);
+        enrichedOut.push({
+          simbolo: sym, ultimoPrecio: info?.currentPrice || 0, variacionPorcentual: 0,
+          yfTicker: yfT, info, score, detalle,
+        });
+        await new Promise((r) => setTimeout(r, 150));
+      }
+      enrichedOut.sort((a, b) => b.score - a.score);
+
+      // PASO 4: Optimización Markowitz Max-Sharpe sobre top candidatos
+      const topCandidatos = enrichedOut.filter((e) => e.score >= 40).slice(0, 6);
+      let weights: { ticker: string; weight: number; monto: number }[] = [];
+      let sharpe = 0, portReturn = 0, portVol = 0;
+
+      const allocLocal = engineAllocations[selectedProfile];
+      const pctRV = allocLocal.rv + allocLocal.cedears;
+      const montoRV = (montoNum * pctRV) / 100;
+      const montoRF = (montoNum * allocLocal.rf) / 100;
+      const montoCau = (montoNum * allocLocal.cau) / 100;
+      const montoEf = (montoNum * allocLocal.ef) / 100;
+
+      if (topCandidatos.length >= 2) {
+        pushStep(`Optimizando pesos con Markowitz Max-Sharpe sobre ${topCandidatos.length} activos…`);
+        const series: Record<string, number[]> = {};
+        for (const c of topCandidatos) {
+          const { data } = await supabase.functions.invoke("yf-history", {
+            body: { ticker: c.yfTicker, range: "2y" },
+          });
+          const closes: number[] = data?.closes || [];
+          if (closes.length > 5) {
+            const rets: number[] = [];
+            for (let i = 1; i < closes.length; i++) rets.push(closes[i] / closes[i - 1] - 1);
+            series[c.simbolo] = rets;
+          }
+          await new Promise((r) => setTimeout(r, 120));
+        }
+        const rfDaily = (macroData?.tasaPlazoFijo || 32) / 100 / 252;
+        const mk = runMarkowitz(series, "markowitz", rfDaily);
+        if (mk) {
+          weights = mk.tickers.map((t, i) => ({
+            ticker: t,
+            weight: mk.weights[i],
+            monto: montoRV * mk.weights[i],
+          }));
+          sharpe = mk.sharpe;
+          portReturn = mk.portReturn;
+          portVol = mk.portVol;
+        }
+      } else {
+        pushStep("Activos insuficientes — usando pesos equiponderados");
+        const n = topCandidatos.length || 1;
+        weights = topCandidatos.map((c) => ({
+          ticker: c.simbolo, weight: 1 / n, monto: montoRV / n,
+        }));
+      }
+
+      pushStep("✓ Portfolio generado con éxito");
+
+      setAutoResult({
+        regimen: intermarket.regimen,
+        flags: intermarket.flags,
+        sectores: intermarket.sectores,
+        justificacion: intermarket.justificacion,
+        universoRV: universo,
+        pesoMaxRV: intermarket.pesoMaxRV,
+        enriched: enrichedOut,
+        weights,
+        sharpe,
+        portReturn,
+        portVol,
+        bonos: intermarket.bonos,
+        montoRV, montoRF, montoCau, montoEf,
+      });
+      setMonto(autoMonto);
+      setMoneda(autoMoneda);
+      setEnriched(enrichedOut);
+      setMsg(`Auto-Portfolio listo. Sharpe estimado: ${sharpe.toFixed(2)}`, "green");
+    } catch (e) {
+      setMsg(`Error en Auto-Portfolio: ${e instanceof Error ? e.message : "desconocido"}`, "red");
+    } finally {
+      setAutoLoading(false);
+    }
+  };
+
   const exportarCSV = () => {
     if (!enriched.length) return;
     const rows = [
