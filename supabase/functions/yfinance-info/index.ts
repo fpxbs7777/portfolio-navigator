@@ -25,7 +25,7 @@ Deno.serve(async (req) => {
     }
 
     const safe = ticker.trim().toUpperCase().replace(/[^A-Z0-9.\-]/g, "");
-    const url = `${YF_BASE}${encodeURIComponent(safe)}?modules=financialData,defaultKeyStatistics,summaryProfile,price`;
+    const url = `${YF_BASE}${encodeURIComponent(safe)}?modules=financialData,defaultKeyStatistics,summaryProfile,price,recommendationTrend,earningsTrend,calendarEvents`;
 
     const resp = await fetch(url, {
       headers: {
@@ -57,6 +57,9 @@ Deno.serve(async (req) => {
     const ks = result.defaultKeyStatistics ?? {};
     const sp = result.summaryProfile ?? {};
     const pr = result.price ?? {};
+    const rt = result.recommendationTrend?.trend?.[0] ?? {};
+    const et = result.earningsTrend?.trend?.[0]?.earningsEstimate ?? {};
+    const ce = result.calendarEvents ?? {};
 
     const info = {
       forwardPE: ks.forwardPE?.raw ?? null,
@@ -67,9 +70,24 @@ Deno.serve(async (req) => {
       currentRatio: fd.currentRatio?.raw ?? null,
       profitMargins: fd.profitMargins?.raw ?? null,
       dividendYield: ks.dividendYield?.raw ?? null,
+      beta: ks.beta?.raw ?? null,
       sector: sp.sector ?? null,
       industry: sp.industry ?? null,
+      country: sp.country ?? null,
       longName: pr.longName ?? null,
+      currentPrice: fd.currentPrice?.raw ?? pr.regularMarketPrice?.raw ?? null,
+      targetMeanPrice: fd.targetMeanPrice?.raw ?? null,
+      numberOfAnalysts: fd.numberOfAnalystOpinions?.raw ?? null,
+      recomBuy: (rt.strongBuy ?? 0) + (rt.buy ?? 0),
+      recomHold: rt.hold ?? 0,
+      recomSell: (rt.sell ?? 0) + (rt.strongSell ?? 0),
+      epsEst: et.avg?.raw ?? null,
+      nextEarnings: ce.earnings?.earningsDate?.[0]?.fmt ?? null,
+      freeCashflow: fd.freeCashflow?.raw ?? null,
+      totalCash: fd.totalCash?.raw ?? null,
+      totalDebt: fd.totalDebt?.raw ?? null,
+      ebitda: fd.ebitda?.raw ?? null,
+      marketCap: pr.marketCap?.raw ?? null,
     };
 
     return new Response(

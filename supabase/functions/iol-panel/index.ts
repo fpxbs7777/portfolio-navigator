@@ -7,12 +7,15 @@ const corsHeaders = {
     "authorization, x-client-info, apikey, content-type, x-supabase-client-platform, x-supabase-client-platform-version, x-supabase-client-runtime, x-supabase-client-runtime-version",
 };
 
-const PANEL_PATHS: Record<string, string> = {
-  cedears: "cedears",
-  acciones: "acciones",
-  titulosPublicos: "titulosPublicos",
-  obligacionesNegociables: "obligacionesNegociables",
-  cauciones: "cauciones",
+// Mapeo: clave del UI -> { instrumento IOL, país por defecto }
+const PANEL_PATHS: Record<string, { inst: string; pais: string }> = {
+  cedears:                 { inst: "cedears",                 pais: "argentina" },
+  acciones:                { inst: "acciones",                pais: "argentina" },
+  titulosPublicos:         { inst: "titulosPublicos",         pais: "argentina" },
+  obligacionesNegociables: { inst: "obligacionesNegociables", pais: "argentina" },
+  cauciones:               { inst: "cauciones",               pais: "argentina" },
+  adrs:                    { inst: "adrs",                    pais: "estados_unidos" },
+  acciones_eeuu:           { inst: "acciones",                pais: "estados_unidos" },
 };
 
 Deno.serve(async (req) => {
@@ -21,7 +24,7 @@ Deno.serve(async (req) => {
   }
 
   try {
-    const { token, panel = "cedears", pais = "argentina" } = await req.json();
+    const { token, panel = "cedears", pais } = await req.json();
 
     if (!token) {
       return new Response(
@@ -30,15 +33,16 @@ Deno.serve(async (req) => {
       );
     }
 
-    const instrumento = PANEL_PATHS[panel];
-    if (!instrumento) {
+    const cfg = PANEL_PATHS[panel];
+    if (!cfg) {
       return new Response(
         JSON.stringify({ error: `Panel inválido: ${panel}` }),
         { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
     }
 
-    const url = `https://api.invertironline.com/api/v2/Cotizaciones/${instrumento}/${pais}/Todos`;
+    const finalPais = pais || cfg.pais;
+    const url = `https://api.invertironline.com/api/v2/Cotizaciones/${cfg.inst}/${finalPais}/Todos`;
 
     const resp = await fetch(url, {
       headers: {
