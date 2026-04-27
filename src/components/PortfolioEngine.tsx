@@ -23,6 +23,7 @@ import {
 } from "@/data/portfolioEngine";
 import type { ProfileKey } from "@/data/iolData";
 import { profiles } from "@/data/iolData";
+import { BONDS_AR, calcYTM, calcModDuration, nextCoupon, futureFlows } from "@/data/bondsAR";
 import { cn } from "@/lib/utils";
 import {
   Lock,
@@ -84,6 +85,18 @@ interface EpsRow {
   epsEst: number | null;
   quarters: number;
   error?: string;
+}
+
+interface BondMetric {
+  ticker: string;
+  name: string;
+  law: "NY" | "AR";
+  price: number | null;
+  ytm: number | null;
+  duration: number | null;
+  nextCouponDate: string | null;
+  nextCouponAmount: number | null;
+  hasFlows: boolean;
 }
 
 const TABS: { key: Tab; label: string; icon: typeof Lock }[] = [
@@ -172,6 +185,7 @@ export const PortfolioEngine = ({ selectedProfile, onProfileChange }: PortfolioE
     portReturn: number;
     portVol: number;
     bonos: string[];
+    bondMetrics: BondMetric[];
     montoRV: number;
     montoRF: number;
     montoCau: number;
@@ -469,6 +483,35 @@ export const PortfolioEngine = ({ selectedProfile, onProfileChange }: PortfolioE
 
       pushStep("✓ Portfolio generado con éxito");
 
+      // PASO 5: Enriquecer bonos sugeridos con TIR/duration/cobros
+      const bondMetrics: BondMetric[] = [];
+      const bondsToFetch = (intermarket.bonos || []).filter((b) => BONDS_AR[b]);
+      if (bondsToFetch.length) {
+        pushStep(`Calculando TIR y duration de ${bondsToFetch.length} bonos sugeridos…`);
+        const { data: bondsData } = await supabase.functions.invoke("bonds-ar", {
+          body: { tickers: bondsToFetch },
+        });
+        const prices = (bondsData?.prices || {}) as Record<string, { price: number | null }>;
+        for (const ticker of bondsToFetch) {
+          const def = BONDS_AR[ticker];
+          const price = prices[ticker]?.price ?? null;
+          const ytm = price ? calcYTM(def, price) : null;
+          const dur = price && ytm != null ? calcModDuration(def, price, ytm) : null;
+          const next = nextCoupon(def);
+          bondMetrics.push({
+            ticker,
+            name: def.name,
+            law: def.law,
+            price,
+            ytm,
+            duration: dur,
+            nextCouponDate: next?.date || null,
+            nextCouponAmount: next ? next.coupon + next.amortization : null,
+            hasFlows: futureFlows(def).length > 0,
+          });
+        }
+      }
+
       setAutoResult({
         regimen: intermarket.regimen,
         flags: intermarket.flags,
@@ -482,6 +525,7 @@ export const PortfolioEngine = ({ selectedProfile, onProfileChange }: PortfolioE
         portReturn,
         portVol,
         bonos: intermarket.bonos,
+        bondMetrics,
         montoRV, montoRF, montoCau, montoEf,
       });
       setMonto(autoMonto);
@@ -705,13 +749,55 @@ export const PortfolioEngine = ({ selectedProfile, onProfileChange }: PortfolioE
                         <span className="uppercase tracking-wider">Renta Fija sugerida</span>
                         <span className="tabular-nums">{autoMoneda.toUpperCase()} {Math.round(autoResult.montoRF).toLocaleString("es-AR")}</span>
                       </div>
-                      <div className="flex flex-wrap gap-2">
-                        {autoResult.bonos.map((b) => (
-                          <span key={b} className="px-2.5 py-1 rounded-md bg-secondary text-foreground text-xs font-mono border border-border">
-                            {b}
-                          </span>
-                        ))}
-                      </div>
+                      {autoResult.bondMetrics.length > 0 ? (
+                        <div className="border border-border rounded-lg overflow-hidden">
+                          <table className="w-full text-xs">
+                            <thead className="bg-muted/40">
+                              <tr>
+                                <th className="text-left px-3 py-2 font-mono uppercase tracking-wider text-[9px] text-muted-foreground">Bono</th>
+                                <th className="text-right px-3 py-2 font-mono uppercase tracking-wider text-[9px] text-muted-foreground">Precio</th>
+                                <th className="text-right px-3 py-2 font-mono uppercase tracking-wider text-[9px] text-muted-foreground">TIR</th>
+                                <th className="text-right px-3 py-2 font-mono uppercase tracking-wider text-[9px] text-muted-foreground">Duration</th>
+                                <th className="text-right px-3 py-2 font-mono uppercase tracking-wider text-[9px] text-muted-foreground">Próx. cupón</th>
+                              </tr>
+                            </thead>
+                            <tbody>
+                              {autoResult.bondMetrics.map((b) => (
+                                <tr key={b.ticker} className="border-t border-border">
+                                  <td className="px-3 py-2 font-mono text-foreground">
+                                    <span className="font-semibold">{b.ticker}</span>
+                                    <span className="ml-2 text-[9px] uppercase text-muted-foreground">
+                                      {b.law === "NY" ? "Ley NY" : "Ley AR"}
+                                    </span>
+                                  </td>
+                                  <td className="px-3 py-2 font-mono text-right text-muted-foreground">
+                                    {b.price != null ? b.price.toFixed(2) : "—"}
+                                  </td>
+                                  <td className="px-3 py-2 font-mono text-right text-accent font-semibold">
+                                    {b.ytm != null ? `${(b.ytm * 100).toFixed(1)}%` : "—"}
+                                  </td>
+                                  <td className="px-3 py-2 font-mono text-right text-foreground">
+                                    {b.duration != null ? `${b.duration.toFixed(2)}a` : "—"}
+                                  </td>
+                                  <td className="px-3 py-2 font-mono text-right text-success">
+                                    {b.nextCouponDate
+                                      ? new Date(b.nextCouponDate).toLocaleDateString("es-AR", { day: "2-digit", month: "short", year: "2-digit" })
+                                      : "—"}
+                                  </td>
+                                </tr>
+                              ))}
+                            </tbody>
+                          </table>
+                        </div>
+                      ) : (
+                        <div className="flex flex-wrap gap-2">
+                          {autoResult.bonos.map((b) => (
+                            <span key={b} className="px-2.5 py-1 rounded-md bg-secondary text-foreground text-xs font-mono border border-border">
+                              {b}
+                            </span>
+                          ))}
+                        </div>
+                      )}
                     </div>
                   )}
 

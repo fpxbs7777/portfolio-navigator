@@ -48,10 +48,10 @@ Deno.serve(async (req) => {
       .map((e: { surprisePercent?: { raw?: number } }) => e.surprisePercent?.raw)
       .filter((v: number | undefined): v is number => typeof v === "number");
 
-    const beatCount = surprises.filter((v) => v > 0).length;
+    const beatCount = surprises.filter((v: number) => v > 0).length;
     const beatRate = surprises.length ? (beatCount / surprises.length) * 100 : null;
     const avgSurprise = surprises.length
-      ? (surprises.reduce((s, v) => s + v, 0) / surprises.length) * 100
+      ? (surprises.reduce((s: number, v: number) => s + v, 0) / surprises.length) * 100
       : null;
 
     const nextDate = res.calendarEvents?.earnings?.earningsDate?.[0]?.fmt ?? null;
