@@ -483,6 +483,35 @@ export const PortfolioEngine = ({ selectedProfile, onProfileChange }: PortfolioE
 
       pushStep("✓ Portfolio generado con éxito");
 
+      // PASO 5: Enriquecer bonos sugeridos con TIR/duration/cobros
+      const bondMetrics: BondMetric[] = [];
+      const bondsToFetch = (intermarket.bonos || []).filter((b) => BONDS_AR[b]);
+      if (bondsToFetch.length) {
+        pushStep(`Calculando TIR y duration de ${bondsToFetch.length} bonos sugeridos…`);
+        const { data: bondsData } = await supabase.functions.invoke("bonds-ar", {
+          body: { tickers: bondsToFetch },
+        });
+        const prices = (bondsData?.prices || {}) as Record<string, { price: number | null }>;
+        for (const ticker of bondsToFetch) {
+          const def = BONDS_AR[ticker];
+          const price = prices[ticker]?.price ?? null;
+          const ytm = price ? calcYTM(def, price) : null;
+          const dur = price && ytm != null ? calcModDuration(def, price, ytm) : null;
+          const next = nextCoupon(def);
+          bondMetrics.push({
+            ticker,
+            name: def.name,
+            law: def.law,
+            price,
+            ytm,
+            duration: dur,
+            nextCouponDate: next?.date || null,
+            nextCouponAmount: next ? next.coupon + next.amortization : null,
+            hasFlows: futureFlows(def).length > 0,
+          });
+        }
+      }
+
       setAutoResult({
         regimen: intermarket.regimen,
         flags: intermarket.flags,
@@ -496,6 +525,7 @@ export const PortfolioEngine = ({ selectedProfile, onProfileChange }: PortfolioE
         portReturn,
         portVol,
         bonos: intermarket.bonos,
+        bondMetrics,
         montoRV, montoRF, montoCau, montoEf,
       });
       setMonto(autoMonto);
