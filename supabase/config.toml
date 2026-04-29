@@ -23,3 +23,6 @@ verify_jwt = false
 
 [functions.bonds-ar]
 verify_jwt = false
+
+[functions.bcra-inflacion]
+verify_jwt = false
