@@ -191,7 +191,7 @@ const Index = () => {
             <SectionHeader
               eyebrow="En vivo"
               title="Motor de portfolio en vivo"
-              description="Conectá tu cuenta IOL (opcional) o usá el modo demo. Analiza el panel elegido y rankea cada activo con un score de salud financiera (P/E, ROE, D/E, márgenes, dividendo). Genera el portfolio sugerido para el perfil activo."
+              description="Conectá tu cuenta IOL para analizar el panel elegido y rankear cada activo con un score de salud financiera (P/E, ROE, D/E, márgenes, dividendo). Genera el portfolio sugerido para el perfil activo."
             />
             <PortfolioEngine
               selectedProfile={selectedProfile}
