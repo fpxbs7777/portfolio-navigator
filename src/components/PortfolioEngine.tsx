@@ -9,7 +9,6 @@ import {
   mapYFTicker,
   scoreClass,
   engineAllocations,
-  getDemoPanel,
   PANEL_LABELS,
   calcBuckets,
   calcCAPM,
@@ -23,7 +22,6 @@ import {
 } from "@/data/portfolioEngine";
 import type { ProfileKey } from "@/data/iolData";
 import { profiles } from "@/data/iolData";
-import { BONDS_AR, calcYTM, calcModDuration, nextCoupon, futureFlows } from "@/data/bondsAR";
 import { cn } from "@/lib/utils";
 import {
   Lock,
@@ -85,18 +83,6 @@ interface EpsRow {
   epsEst: number | null;
   quarters: number;
   error?: string;
-}
-
-interface BondMetric {
-  ticker: string;
-  name: string;
-  law: "NY" | "AR";
-  price: number | null;
-  ytm: number | null;
-  duration: number | null;
-  nextCouponDate: string | null;
-  nextCouponAmount: number | null;
-  hasFlows: boolean;
 }
 
 const TABS: { key: Tab; label: string; icon: typeof Lock }[] = [
@@ -185,7 +171,6 @@ export const PortfolioEngine = ({ selectedProfile, onProfileChange }: PortfolioE
     portReturn: number;
     portVol: number;
     bonos: string[];
-    bondMetrics: BondMetric[];
     montoRV: number;
     montoRF: number;
     montoCau: number;
@@ -225,27 +210,27 @@ export const PortfolioEngine = ({ selectedProfile, onProfileChange }: PortfolioE
     setMsg("Macro actualizado: dólares + inflación + riesgo país.", "green");
   };
 
-  const cargarPanel = async (useDemo = false) => {
+  const cargarPanel = async () => {
     setPanelLoading(true);
     setPanelData([]);
     setEnriched([]);
     setMsg(`Cargando panel: ${PANEL_LABELS[panel]}…`, "amber");
 
     let titulos: PanelTitulo[] = [];
-    if (token && !useDemo) {
-      const { data, error } = await supabase.functions.invoke("iol-panel", {
-        body: { token, panel },
-      });
-      if (error || !data?.titulos) {
-        setMsg(`Error IOL — usando datos demo. (${error?.message || data?.error || ""})`, "amber");
-        titulos = getDemoPanel(panel);
-      } else {
-        titulos = data.titulos;
-      }
-    } else {
-      titulos = getDemoPanel(panel);
-      setMsg("Modo demo: mostrando datos de ejemplo.", "amber");
+    if (!token) {
+      setPanelLoading(false);
+      setMsg("Necesitás conectar IOL para cargar paneles. No hay datos de ejemplo.", "red");
+      return;
     }
+    const { data, error } = await supabase.functions.invoke("iol-panel", {
+      body: { token, panel },
+    });
+    if (error || !data?.titulos) {
+      setPanelLoading(false);
+      setMsg(`Error IOL: ${error?.message || data?.error || "respuesta vacía"}`, "red");
+      return;
+    }
+    titulos = data.titulos;
 
     let fil = titulos.filter((t) => {
       if (filVar === "pos") return (t.variacionPorcentual || 0) >= 0;
@@ -483,35 +468,6 @@ export const PortfolioEngine = ({ selectedProfile, onProfileChange }: PortfolioE
 
       pushStep("✓ Portfolio generado con éxito");
 
-      // PASO 5: Enriquecer bonos sugeridos con TIR/duration/cobros
-      const bondMetrics: BondMetric[] = [];
-      const bondsToFetch = (intermarket.bonos || []).filter((b) => BONDS_AR[b]);
-      if (bondsToFetch.length) {
-        pushStep(`Calculando TIR y duration de ${bondsToFetch.length} bonos sugeridos…`);
-        const { data: bondsData } = await supabase.functions.invoke("bonds-ar", {
-          body: { tickers: bondsToFetch },
-        });
-        const prices = (bondsData?.prices || {}) as Record<string, { price: number | null }>;
-        for (const ticker of bondsToFetch) {
-          const def = BONDS_AR[ticker];
-          const price = prices[ticker]?.price ?? null;
-          const ytm = price ? calcYTM(def, price) : null;
-          const dur = price && ytm != null ? calcModDuration(def, price, ytm) : null;
-          const next = nextCoupon(def);
-          bondMetrics.push({
-            ticker,
-            name: def.name,
-            law: def.law,
-            price,
-            ytm,
-            duration: dur,
-            nextCouponDate: next?.date || null,
-            nextCouponAmount: next ? next.coupon + next.amortization : null,
-            hasFlows: futureFlows(def).length > 0,
-          });
-        }
-      }
-
       setAutoResult({
         regimen: intermarket.regimen,
         flags: intermarket.flags,
@@ -525,7 +481,6 @@ export const PortfolioEngine = ({ selectedProfile, onProfileChange }: PortfolioE
         portReturn,
         portVol,
         bonos: intermarket.bonos,
-        bondMetrics,
         montoRV, montoRF, montoCau, montoEf,
       });
       setMonto(autoMonto);
@@ -749,55 +704,13 @@ export const PortfolioEngine = ({ selectedProfile, onProfileChange }: PortfolioE
                         <span className="uppercase tracking-wider">Renta Fija sugerida</span>
                         <span className="tabular-nums">{autoMoneda.toUpperCase()} {Math.round(autoResult.montoRF).toLocaleString("es-AR")}</span>
                       </div>
-                      {autoResult.bondMetrics.length > 0 ? (
-                        <div className="border border-border rounded-lg overflow-hidden">
-                          <table className="w-full text-xs">
-                            <thead className="bg-muted/40">
-                              <tr>
-                                <th className="text-left px-3 py-2 font-mono uppercase tracking-wider text-[9px] text-muted-foreground">Bono</th>
-                                <th className="text-right px-3 py-2 font-mono uppercase tracking-wider text-[9px] text-muted-foreground">Precio</th>
-                                <th className="text-right px-3 py-2 font-mono uppercase tracking-wider text-[9px] text-muted-foreground">TIR</th>
-                                <th className="text-right px-3 py-2 font-mono uppercase tracking-wider text-[9px] text-muted-foreground">Duration</th>
-                                <th className="text-right px-3 py-2 font-mono uppercase tracking-wider text-[9px] text-muted-foreground">Próx. cupón</th>
-                              </tr>
-                            </thead>
-                            <tbody>
-                              {autoResult.bondMetrics.map((b) => (
-                                <tr key={b.ticker} className="border-t border-border">
-                                  <td className="px-3 py-2 font-mono text-foreground">
-                                    <span className="font-semibold">{b.ticker}</span>
-                                    <span className="ml-2 text-[9px] uppercase text-muted-foreground">
-                                      {b.law === "NY" ? "Ley NY" : "Ley AR"}
-                                    </span>
-                                  </td>
-                                  <td className="px-3 py-2 font-mono text-right text-muted-foreground">
-                                    {b.price != null ? b.price.toFixed(2) : "—"}
-                                  </td>
-                                  <td className="px-3 py-2 font-mono text-right text-accent font-semibold">
-                                    {b.ytm != null ? `${(b.ytm * 100).toFixed(1)}%` : "—"}
-                                  </td>
-                                  <td className="px-3 py-2 font-mono text-right text-foreground">
-                                    {b.duration != null ? `${b.duration.toFixed(2)}a` : "—"}
-                                  </td>
-                                  <td className="px-3 py-2 font-mono text-right text-success">
-                                    {b.nextCouponDate
-                                      ? new Date(b.nextCouponDate).toLocaleDateString("es-AR", { day: "2-digit", month: "short", year: "2-digit" })
-                                      : "—"}
-                                  </td>
-                                </tr>
-                              ))}
-                            </tbody>
-                          </table>
-                        </div>
-                      ) : (
-                        <div className="flex flex-wrap gap-2">
-                          {autoResult.bonos.map((b) => (
-                            <span key={b} className="px-2.5 py-1 rounded-md bg-secondary text-foreground text-xs font-mono border border-border">
-                              {b}
-                            </span>
-                          ))}
-                        </div>
-                      )}
+                      <div className="flex flex-wrap gap-2">
+                        {autoResult.bonos.map((b) => (
+                          <span key={b} className="px-2.5 py-1 rounded-md bg-secondary text-foreground text-xs font-mono border border-border">
+                            {b}
+                          </span>
+                        ))}
+                      </div>
                     </div>
                   )}
 
@@ -872,7 +785,7 @@ export const PortfolioEngine = ({ selectedProfile, onProfileChange }: PortfolioE
             {token ? "Reconectar a IOL" : "Conectar con IOL →"}
           </Button>
           <p className="text-[11px] text-muted-foreground mt-3">
-            🔒 Tus credenciales viajan a través de un edge function seguro. Sin login podés usar el resto del motor con datos demo y APIs públicas (Macro AR, yFinance, CAPM, Markowitz, EPS).
+            🔒 Tus credenciales viajan a través de un edge function seguro. La conexión a IOL es obligatoria para cargar paneles; el resto del motor usa APIs públicas en vivo (Macro AR, yFinance, CAPM, Markowitz, EPS).
           </p>
 
           <div className="mt-6 grid md:grid-cols-3 gap-3">
@@ -1021,11 +934,8 @@ export const PortfolioEngine = ({ selectedProfile, onProfileChange }: PortfolioE
           </div>
 
           <div className="flex flex-col sm:flex-row gap-3 mb-5">
-            <Button onClick={() => cargarPanel(false)} disabled={panelLoading} className="flex-1 h-11 rounded-full bg-primary hover:bg-primary/90">
+            <Button onClick={() => cargarPanel()} disabled={panelLoading || !token} className="flex-1 h-11 rounded-full bg-primary hover:bg-primary/90">
               {panelLoading ? <><Loader2 className="w-4 h-4 mr-2 animate-spin" /> Cargando…</> : "Cargar panel IOL →"}
-            </Button>
-            <Button onClick={() => cargarPanel(true)} disabled={panelLoading} variant="outline" className="h-11 rounded-full">
-              Modo demo
             </Button>
           </div>
 
