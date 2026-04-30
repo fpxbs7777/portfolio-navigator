@@ -138,13 +138,17 @@ Deno.serve(async (req) => {
     const intermarket = detectarRegimen(macro || {});
     const universo = universoPorPerfil(profile, intermarket);
 
-    // 2. Justificación con Lovable AI (opcional, no bloqueante)
-    let justificacion = "Análisis automático por reglas intermarket.";
+    // 2. Justificación con Lovable AI (obligatoria — sin fallback heurístico)
+    let justificacion = "";
     const apiKey = Deno.env.get("LOVABLE_API_KEY");
 
-    if (apiKey) {
-      try {
-        const prompt = `Sos un analista financiero argentino. Generá una justificación BREVE (máx 4 oraciones, español rioplatense) sobre por qué este escenario favorece estos sectores.
+    if (!apiKey) {
+      return new Response(JSON.stringify({ error: "LOVABLE_API_KEY no configurada" }), {
+        status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+
+    const prompt = `Sos un analista financiero argentino. Generá una justificación BREVE (máx 4 oraciones, español rioplatense) sobre por qué este escenario favorece estos sectores.
 
 Datos macro:
 - Dólar MEP: $${macro.dolares?.mep ?? "N/D"} (spread ${macro.spreads?.mep?.toFixed(1) ?? "N/D"}%)
@@ -158,31 +162,32 @@ Perfil del inversor: ${profile}
 
 Justificá en lenguaje claro, sin usar markdown ni listas.`;
 
-        const aiResp = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
-          method: "POST",
-          headers: { Authorization: `Bearer ${apiKey}`, "Content-Type": "application/json" },
-          body: JSON.stringify({
-            model: "google/gemini-2.5-flash",
-            messages: [
-              { role: "system", content: "Sos un analista financiero conciso y directo." },
-              { role: "user", content: prompt },
-            ],
-          }),
-        });
+    const aiResp = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
+      method: "POST",
+      headers: { Authorization: `Bearer ${apiKey}`, "Content-Type": "application/json" },
+      body: JSON.stringify({
+        model: "google/gemini-2.5-flash",
+        messages: [
+          { role: "system", content: "Sos un analista financiero conciso y directo." },
+          { role: "user", content: prompt },
+        ],
+      }),
+    });
 
-        if (aiResp.ok) {
-          const aiData = await aiResp.json();
-          const txt = aiData.choices?.[0]?.message?.content;
-          if (txt) justificacion = txt.trim();
-        } else if (aiResp.status === 429) {
-          justificacion = "Rate limit IA — usando justificación heurística. Régimen: " + intermarket.regimen;
-        } else if (aiResp.status === 402) {
-          justificacion = "Sin créditos IA — usando justificación heurística. Régimen: " + intermarket.regimen;
-        }
-      } catch (e) {
-        console.error("AI error:", e);
-      }
+    if (!aiResp.ok) {
+      const errTxt = await aiResp.text().catch(() => "");
+      return new Response(JSON.stringify({
+        error: `IA falló (${aiResp.status})`, detail: errTxt.slice(0, 200),
+      }), { status: 502, headers: { ...corsHeaders, "Content-Type": "application/json" } });
     }
+    const aiData = await aiResp.json();
+    const txt = aiData.choices?.[0]?.message?.content;
+    if (!txt) {
+      return new Response(JSON.stringify({ error: "IA devolvió respuesta vacía" }), {
+        status: 502, headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+    justificacion = txt.trim();
 
     return new Response(JSON.stringify({
       regimen: intermarket.regimen,
