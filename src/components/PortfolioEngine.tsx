@@ -9,7 +9,6 @@ import {
   mapYFTicker,
   scoreClass,
   engineAllocations,
-  getDemoPanel,
   PANEL_LABELS,
   calcBuckets,
   calcCAPM,
@@ -225,27 +224,27 @@ export const PortfolioEngine = ({ selectedProfile, onProfileChange }: PortfolioE
     setMsg("Macro actualizado: dólares + inflación + riesgo país.", "green");
   };
 
-  const cargarPanel = async (useDemo = false) => {
+  const cargarPanel = async () => {
     setPanelLoading(true);
     setPanelData([]);
     setEnriched([]);
     setMsg(`Cargando panel: ${PANEL_LABELS[panel]}…`, "amber");
 
     let titulos: PanelTitulo[] = [];
-    if (token && !useDemo) {
-      const { data, error } = await supabase.functions.invoke("iol-panel", {
-        body: { token, panel },
-      });
-      if (error || !data?.titulos) {
-        setMsg(`Error IOL — usando datos demo. (${error?.message || data?.error || ""})`, "amber");
-        titulos = getDemoPanel(panel);
-      } else {
-        titulos = data.titulos;
-      }
-    } else {
-      titulos = getDemoPanel(panel);
-      setMsg("Modo demo: mostrando datos de ejemplo.", "amber");
+    if (!token) {
+      setPanelLoading(false);
+      setMsg("Necesitás conectar IOL para cargar paneles. No hay datos de ejemplo.", "red");
+      return;
     }
+    const { data, error } = await supabase.functions.invoke("iol-panel", {
+      body: { token, panel },
+    });
+    if (error || !data?.titulos) {
+      setPanelLoading(false);
+      setMsg(`Error IOL: ${error?.message || data?.error || "respuesta vacía"}`, "red");
+      return;
+    }
+    titulos = data.titulos;
 
     let fil = titulos.filter((t) => {
       if (filVar === "pos") return (t.variacionPorcentual || 0) >= 0;
