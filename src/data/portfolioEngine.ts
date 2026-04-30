@@ -211,65 +211,6 @@ export const PANEL_LABELS: Record<string, string> = {
   acciones_eeuu: "Acciones EE.UU",
 };
 
-export function getDemoPanel(panel: string): PanelTitulo[] {
-  const data: Record<string, PanelTitulo[]> = {
-    cedears: [
-      { simbolo: "AAPL", ultimoPrecio: 22150.5, variacionPorcentual: 1.23, volumenNominal: 4500000 },
-      { simbolo: "MSFT", ultimoPrecio: 19800,   variacionPorcentual: 0.87, volumenNominal: 3800000 },
-      { simbolo: "GOOGL",ultimoPrecio: 18500.75,variacionPorcentual: -0.45,volumenNominal: 2900000 },
-      { simbolo: "AMZN", ultimoPrecio: 21300,   variacionPorcentual: 2.1,  volumenNominal: 3200000 },
-      { simbolo: "TSLA", ultimoPrecio: 16800.25,variacionPorcentual: -3.2, volumenNominal: 5100000 },
-      { simbolo: "META", ultimoPrecio: 24100,   variacionPorcentual: 1.55, volumenNominal: 2400000 },
-      { simbolo: "NVDA", ultimoPrecio: 31500.5, variacionPorcentual: 4.3,  volumenNominal: 6200000 },
-      { simbolo: "MELI", ultimoPrecio: 195000,  variacionPorcentual: 2.8,  volumenNominal: 800000  },
-      { simbolo: "BABA", ultimoPrecio: 9800,    variacionPorcentual: -1.1, volumenNominal: 1800000 },
-      { simbolo: "VALE", ultimoPrecio: 11200.3, variacionPorcentual: 0.65, volumenNominal: 2100000 },
-      { simbolo: "KO",   ultimoPrecio: 14500,   variacionPorcentual: 0.32, volumenNominal: 1500000 },
-      { simbolo: "JPM",  ultimoPrecio: 25800,   variacionPorcentual: 1.05, volumenNominal: 1700000 },
-    ],
-    acciones: [
-      { simbolo: "GGAL", ultimoPrecio: 6850,  variacionPorcentual: 2.3,  volumenNominal: 1200000 },
-      { simbolo: "BMA",  ultimoPrecio: 8200,  variacionPorcentual: 1.8,  volumenNominal: 800000  },
-      { simbolo: "YPF",  ultimoPrecio: 31200, variacionPorcentual: 3.1,  volumenNominal: 1500000 },
-      { simbolo: "PAMP", ultimoPrecio: 3450,  variacionPorcentual: -0.9, volumenNominal: 950000  },
-      { simbolo: "TXAR", ultimoPrecio: 1120,  variacionPorcentual: 0.45, volumenNominal: 700000  },
-      { simbolo: "ALUA", ultimoPrecio: 1650,  variacionPorcentual: 1.2,  volumenNominal: 600000  },
-      { simbolo: "CEPU", ultimoPrecio: 2300,  variacionPorcentual: -1.5, volumenNominal: 850000  },
-      { simbolo: "CRES", ultimoPrecio: 4200,  variacionPorcentual: 0.75, volumenNominal: 450000  },
-    ],
-    titulosPublicos: [
-      { simbolo: "AL30", ultimoPrecio: 66200,  variacionPorcentual: 0.3 },
-      { simbolo: "GD30", ultimoPrecio: 65800,  variacionPorcentual: 0.25 },
-      { simbolo: "AL35", ultimoPrecio: 58500,  variacionPorcentual: -0.1 },
-      { simbolo: "GD35", ultimoPrecio: 58100,  variacionPorcentual: 0.15 },
-      { simbolo: "TX26", ultimoPrecio: 110200, variacionPorcentual: 0.08 },
-    ],
-    obligacionesNegociables: [
-      { simbolo: "YCA6O", ultimoPrecio: 102.5, variacionPorcentual: 0.05 },
-      { simbolo: "YMCHO", ultimoPrecio: 103.2, variacionPorcentual: 0.12 },
-      { simbolo: "TGS2O", ultimoPrecio: 101.8, variacionPorcentual: 0.03 },
-    ],
-    cauciones: [
-      { simbolo: "CAUC1",  ultimoPrecio: 100, variacionPorcentual: 0.08 },
-      { simbolo: "CAUC7",  ultimoPrecio: 100, variacionPorcentual: 0.09 },
-      { simbolo: "CAUC30", ultimoPrecio: 100, variacionPorcentual: 0.11 },
-    ],
-    adrs: [
-      { simbolo: "GGAL", ultimoPrecio: 45.3, variacionPorcentual: 2.1 },
-      { simbolo: "BMA",  ultimoPrecio: 62.8, variacionPorcentual: 1.5 },
-      { simbolo: "YPF",  ultimoPrecio: 35.2, variacionPorcentual: 3.4 },
-      { simbolo: "PAM",  ultimoPrecio: 78.1, variacionPorcentual: -1.2 },
-      { simbolo: "TEO",  ultimoPrecio: 8.45, variacionPorcentual: 0.6 },
-    ],
-    acciones_eeuu: [
-      { simbolo: "AAPL", ultimoPrecio: 195.2, variacionPorcentual: 1.23 },
-      { simbolo: "MSFT", ultimoPrecio: 415.8, variacionPorcentual: 0.87 },
-      { simbolo: "NVDA", ultimoPrecio: 875.4, variacionPorcentual: 4.3 },
-    ],
-  };
-  return data[panel] || data.cedears;
-}
-
 // ============================================================
 // 5. CAPM — beta, alpha, correlación, r²
 // ============================================================
