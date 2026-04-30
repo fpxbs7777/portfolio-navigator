@@ -1020,11 +1020,8 @@ export const PortfolioEngine = ({ selectedProfile, onProfileChange }: PortfolioE
           </div>
 
           <div className="flex flex-col sm:flex-row gap-3 mb-5">
-            <Button onClick={() => cargarPanel(false)} disabled={panelLoading} className="flex-1 h-11 rounded-full bg-primary hover:bg-primary/90">
+            <Button onClick={() => cargarPanel()} disabled={panelLoading || !token} className="flex-1 h-11 rounded-full bg-primary hover:bg-primary/90">
               {panelLoading ? <><Loader2 className="w-4 h-4 mr-2 animate-spin" /> Cargando…</> : "Cargar panel IOL →"}
-            </Button>
-            <Button onClick={() => cargarPanel(true)} disabled={panelLoading} variant="outline" className="h-11 rounded-full">
-              Modo demo
             </Button>
           </div>
 
