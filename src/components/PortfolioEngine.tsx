@@ -22,7 +22,6 @@ import {
 } from "@/data/portfolioEngine";
 import type { ProfileKey } from "@/data/iolData";
 import { profiles } from "@/data/iolData";
-import { BONDS_AR, calcYTM, calcModDuration, nextCoupon, futureFlows } from "@/data/bondsAR";
 import { cn } from "@/lib/utils";
 import {
   Lock,
@@ -84,18 +83,6 @@ interface EpsRow {
   epsEst: number | null;
   quarters: number;
   error?: string;
-}
-
-interface BondMetric {
-  ticker: string;
-  name: string;
-  law: "NY" | "AR";
-  price: number | null;
-  ytm: number | null;
-  duration: number | null;
-  nextCouponDate: string | null;
-  nextCouponAmount: number | null;
-  hasFlows: boolean;
 }
 
 const TABS: { key: Tab; label: string; icon: typeof Lock }[] = [
