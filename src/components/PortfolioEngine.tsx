@@ -171,7 +171,6 @@ export const PortfolioEngine = ({ selectedProfile, onProfileChange }: PortfolioE
     portReturn: number;
     portVol: number;
     bonos: string[];
-    bondMetrics: BondMetric[];
     montoRV: number;
     montoRF: number;
     montoCau: number;
