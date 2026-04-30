@@ -871,7 +871,7 @@ export const PortfolioEngine = ({ selectedProfile, onProfileChange }: PortfolioE
             {token ? "Reconectar a IOL" : "Conectar con IOL →"}
           </Button>
           <p className="text-[11px] text-muted-foreground mt-3">
-            🔒 Tus credenciales viajan a través de un edge function seguro. Sin login podés usar el resto del motor con datos demo y APIs públicas (Macro AR, yFinance, CAPM, Markowitz, EPS).
+            🔒 Tus credenciales viajan a través de un edge function seguro. La conexión a IOL es obligatoria para cargar paneles; el resto del motor usa APIs públicas en vivo (Macro AR, yFinance, CAPM, Markowitz, EPS).
           </p>
 
           <div className="mt-6 grid md:grid-cols-3 gap-3">
