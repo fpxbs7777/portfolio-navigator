@@ -189,7 +189,7 @@ export function mapYFTicker(simbolo: string): string {
 }
 
 // ============================================================
-// 4. PANEL TITULOS + DEMO DATA
+// 4. PANEL TITULOS
 // ============================================================
 
 export interface PanelTitulo {
