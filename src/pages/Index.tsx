@@ -5,7 +5,6 @@ import { ProfileSelector, PortfolioDetail } from "@/components/PortfolioView";
 import { Glossary } from "@/components/Glossary";
 import { Checklist } from "@/components/Checklist";
 import { PortfolioEngine } from "@/components/PortfolioEngine";
-import { HardDollarSimulator } from "@/components/HardDollarSimulator";
 import type { ProfileKey } from "@/data/iolData";
 import {
   Compass,
@@ -16,11 +15,10 @@ import {
   Sparkles,
   Quote,
   Activity,
-  Coins,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
-type Section = "test" | "portfolios" | "engine" | "bonds" | "checklist" | "glossary";
+type Section = "test" | "portfolios" | "engine" | "checklist" | "glossary";
 
 const Index = () => {
   const [section, setSection] = useState<Section>("test");
@@ -38,7 +36,6 @@ const Index = () => {
   const navItems: { key: Section; label: string; icon: React.ComponentType<{ className?: string }> }[] = [
     { key: "test", label: "Test de perfil", icon: Compass },
     { key: "portfolios", label: "Portafolios", icon: LayoutGrid },
-    { key: "bonds", label: "Bonos USD", icon: Coins },
     { key: "checklist", label: "Checklist", icon: ClipboardCheck },
     { key: "glossary", label: "Glosario", icon: BookOpen },
   ];
@@ -200,17 +197,6 @@ const Index = () => {
               selectedProfile={selectedProfile}
               onProfileChange={setSelectedProfile}
             />
-          </div>
-        )}
-
-        {section === "bonds" && (
-          <div>
-            <SectionHeader
-              eyebrow="Renta fija USD"
-              title="Simulador de bonos hard dollar"
-              description="Calculá TIR, duration, paridad y cronograma de cobros para AL30, GD30, GD35, AE38, GD38 y GD41. Precios live desde ArgentinaDatos, flujos según prospecto oficial del canje 2020."
-            />
-            <HardDollarSimulator />
           </div>
         )}
 
