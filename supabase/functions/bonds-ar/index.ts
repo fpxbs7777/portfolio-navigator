@@ -3,9 +3,8 @@
 // Output: { prices: { [ticker]: { price, change, volume, source, ts } } }
 //
 // API: https://data912.com/live/arg_bonds
-// Para cada ticker base (ej AL30), preferimos la cotización en USD MEP que aparece
-// con el sufijo "D" (ej AL30D). Si no existe, fallback a la cotización en pesos
-// dividida por el dólar MEP (no implementado aquí — devuelve null).
+// Solo se devuelven cotizaciones en USD (sufijo D = MEP, C = CCL).
+// Si no existe cotización en USD para el ticker, se devuelve no_data.
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -67,11 +66,9 @@ Deno.serve(async (req) => {
 
     const ts = new Date().toISOString();
     for (const T of wanted) {
-      // Preferimos cotización en USD (sufijo D = MEP, C = CCL).
-      // Las hardcoded del código (AL30, GD30...) están en VN 100 USD.
+      // Solo cotización en USD (sufijo D = MEP, C = CCL).
       const usd = bySym.get(`${T}D`);
       const ccl = bySym.get(`${T}C`);
-      const ars = bySym.get(T);
 
       const pick = usd || ccl || null;
       if (pick) {
@@ -81,15 +78,6 @@ Deno.serve(async (req) => {
           change: typeof pick.pct_change === "number" ? pick.pct_change : null,
           volume: typeof pick.v === "number" ? pick.v : null,
           source: usd ? "data912_mep" : "data912_ccl",
-          ts,
-        };
-      } else if (ars) {
-        // Fallback: precio en ARS (no convertido). El frontend puede usarlo informativamente.
-        prices[T] = {
-          price: null,
-          change: typeof ars.pct_change === "number" ? ars.pct_change : null,
-          volume: typeof ars.v === "number" ? ars.v : null,
-          source: "data912_ars_only",
           ts,
         };
       } else {
