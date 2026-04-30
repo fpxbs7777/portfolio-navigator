@@ -1,5 +1,5 @@
 // Edge function: consulta Yahoo Finance para fundamentales.
-// Usa v7/quote (público, sin crumb) + v8/chart como fallback.
+// Usa v7/quote (público, sin crumb). Si falla → error.
 // El endpoint v10/quoteSummary ahora requiere crumb+cookie y devuelve 401.
 
 const corsHeaders = {
@@ -19,14 +19,6 @@ async function fetchQuote(symbol: string) {
   return j?.quoteResponse?.result?.[0] ?? null;
 }
 
-async function fetchChartMeta(symbol: string) {
-  const url = `https://query1.finance.yahoo.com/v8/finance/chart/${encodeURIComponent(symbol)}?interval=1d&range=5d`;
-  const r = await fetch(url, { headers: { Accept: "application/json", "User-Agent": UA } });
-  if (!r.ok) return null;
-  const j = await r.json();
-  return j?.chart?.result?.[0]?.meta ?? null;
-}
-
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") {
     return new Response("ok", { headers: corsHeaders });
@@ -44,49 +36,44 @@ Deno.serve(async (req) => {
 
     const safe = ticker.trim().toUpperCase().replace(/[^A-Z0-9.\-]/g, "");
 
-    // 1) Intentar v7/quote
-    let q = await fetchQuote(safe);
+    const q = await fetchQuote(safe);
 
-    // 2) Fallback: si no devuelve nada, probar el chart endpoint para al menos tener precio
-    let meta: any = null;
-    if (!q) meta = await fetchChartMeta(safe);
-
-    if (!q && !meta) {
+    if (!q) {
       return new Response(
-        JSON.stringify({ info: null, ticker: safe }),
-        { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+        JSON.stringify({ error: "Yahoo Finance no devolvió datos para este ticker", ticker: safe }),
+        { status: 502, headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
     }
 
     const info = {
-      forwardPE: q?.forwardPE ?? null,
-      trailingPE: q?.trailingPE ?? null,
+      forwardPE: q.forwardPE ?? null,
+      trailingPE: q.trailingPE ?? null,
       returnOnEquity: null,
       returnOnAssets: null,
       debtToEquity: null,
       currentRatio: null,
       profitMargins: null,
-      dividendYield: q?.trailingAnnualDividendYield ?? q?.dividendYield ?? null,
+      dividendYield: q.trailingAnnualDividendYield ?? q.dividendYield ?? null,
       beta: null,
       sector: null,
       industry: null,
       country: null,
-      longName: q?.longName ?? q?.shortName ?? meta?.symbol ?? null,
-      currentPrice: q?.regularMarketPrice ?? meta?.regularMarketPrice ?? null,
+      longName: q.longName ?? q.shortName ?? null,
+      currentPrice: q.regularMarketPrice ?? null,
       targetMeanPrice: null,
       numberOfAnalysts: null,
       recomBuy: 0,
       recomHold: 0,
       recomSell: 0,
-      epsEst: q?.epsForward ?? q?.epsTrailingTwelveMonths ?? null,
-      nextEarnings: q?.earningsTimestamp
+      epsEst: q.epsForward ?? q.epsTrailingTwelveMonths ?? null,
+      nextEarnings: q.earningsTimestamp
         ? new Date(q.earningsTimestamp * 1000).toISOString().slice(0, 10)
         : null,
       freeCashflow: null,
       totalCash: null,
       totalDebt: null,
       ebitda: null,
-      marketCap: q?.marketCap ?? null,
+      marketCap: q.marketCap ?? null,
     };
 
     return new Response(
